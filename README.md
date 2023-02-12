@@ -20,8 +20,15 @@ brew install apod-cli
 ### Build and run
 1. Make sure you have Go installed on your computer.
 2. Clone this repository to your local machine.
-3. Run go build in the project directory to build the binary.
-4. Optionally, you can move the built binary to a directory in your system PATH to make it available globally.
+3. Generate an API key from [api.nasa.gov](https://api.nasa.gov/#signUp).
+4. Create a "Keys.json" file in the project directory and add your API key to it in the following format:
+```
+{
+    "APIKey": "your_api_key_here"
+}
+```
+5. Run go build in the project directory to build the binary.
+6. Optionally, you can move the built binary to a directory in your system PATH to make it available globally.
 
 ## Usage
 ### Basic usage:
