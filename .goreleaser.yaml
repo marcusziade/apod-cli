@@ -1,0 +1,29 @@
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - env:
+      - CGO_ENABLED=0
+    # Entrypoint to the application
+    main: ./main.go
+    goos:
+      - linux
+      - windows
+      - darwin
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+brews:
+    - tap:
+          owner: marcusziade
+          name: homebrew-apod-cli
+      folder: Formula
+      homepage: https://github.com/marcusziade/homebrew-apod-cli
+      description: A command-line tool to browse the NASA Astronomy Picture of the Day archive.
