@@ -9,6 +9,10 @@
 - Optional command-line flags to specify the date range
 
 ## Installation
+### Download and run (Linux, macOS, Windows)
+*Coming soon*
+### Homebrew (macOS)
+*Coming soon*
 ### Build and run
 1. Make sure you have Go installed on your computer.
 2. Clone this repository to your local machine.
