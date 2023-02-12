@@ -15,10 +15,7 @@ type NasaAPOD struct {
 }
 
 func main() {
-	var start, end string
-	flag.StringVar(&start, "start", "", "start date (YYYY-MM-DD)")
-	flag.StringVar(&end, "end", "", "end date (YYYY-MM-DD)")
-	flag.Parse()
+	start, end := parseArgumentsForDateRange()
 
 	loadMsg := "Fetching APODs...\n\n"
 	fmt.Println(loadMsg)
@@ -35,10 +32,22 @@ func main() {
 	}
 
 	for _, apod := range apods {
-		printAPOD(apod)
+		printPrettyFormattedAPOD(apod)
 	}
 }
 
+func parseArgumentsForDateRange() (start, end string) {
+	flag.StringVar(&start, "start", "", "start date (YYYY-MM-DD)")
+	flag.StringVar(&end, "end", "", "end date (YYYY-MM-DD)")
+	flag.Parse()
+	return
+}
+
+/*
+This function is used to retrieve Astronomy Picture of the Day (APOD) data for a given date range from the NASA API. 
+It takes in two parameters, start and end, which are strings representing the date range to retrieve. 
+If either start or end is empty, the function will retrieve the APODs for the last week.
+*/
 func getAPODsForDateRange(start, end string) ([]NasaAPOD, error) {
 	var url string
 	if start == "" || end == "" {
@@ -70,7 +79,7 @@ func getAPODsForDateRange(start, end string) ([]NasaAPOD, error) {
 	return apods, nil
 }
 
-func printAPOD(apod NasaAPOD) {
+func printPrettyFormattedAPOD(apod NasaAPOD) {
 	date, err := time.Parse("2006-01-02", apod.Date)
 	if err != nil {
 		fmt.Printf("Error parsing date: %v", err)
