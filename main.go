@@ -3,12 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"os"
 	"time"
-
-	"github.com/gen2brain/beeep"
 )
 
 type NasaAPOD struct {
@@ -18,69 +14,44 @@ type NasaAPOD struct {
 }
 
 func main() {
-	ticker := time.Tick(24 * time.Hour)
+	apods := getAPODsForLastWeek()
 
-	for range ticker {
-		if time.Now().Hour() == 18 {
-			apod, err := getLatestAPOD()
-			if err != nil {
-				fmt.Println("Error retrieving APOD:", err)
-				continue
-			}
-
-			fmt.Printf("%s (%s)\n%s\n\n", apod.Date, apod.Title, apod.URL)
-
-			err = displayNotification(apod)
-			if err != nil {
-				fmt.Println("Error displaying notification:", err)
-				continue
-			}
-		}
+	for _, apod := range apods {
+		printAPOD(apod)
 	}
 }
 
-// This function is used to retrieve the latest Astronomy Picture of the Day (APOD) from the NASA API.
-func getLatestAPOD() (NasaAPOD, error) {
-	url := "https://api.nasa.gov/planetary/apod?api_key=efxF8oNY5ZPU48KF3waxgvnQnmITHxLknZpZz6Q8"
+func getAPODsForLastWeek() []NasaAPOD {
+	endDate := time.Now()
+	startDate := endDate.AddDate(0, 0, -7)
+
+	url := fmt.Sprintf(
+		"https://api.nasa.gov/planetary/apod?api_key=efxF8oNY5ZPU48KF3waxgvnQnmITHxLknZpZz6Q8&start_date=%s&end_date=%s",
+		startDate.Format("2006-01-02"),
+		endDate.Format("2006-01-02"))
 
 	resp, err := http.Get(url)
 	if err != nil {
-		return NasaAPOD{}, err
+		fmt.Println("Error retrieving data:", err)
+		return nil
 	}
 	defer resp.Body.Close()
 
-	var apod NasaAPOD
-	err = json.NewDecoder(resp.Body).Decode(&apod)
+	var apods []NasaAPOD
+	err = json.NewDecoder(resp.Body).Decode(&apods)
 	if err != nil {
-		return NasaAPOD{}, err
+		fmt.Println("Error decoding JSON data:", err)
+		return nil
 	}
 
-	return apod, nil
+	return apods
 }
 
-// This function is used to display a desktop notification for a given Astronomy Picture of the Day (APOD). The function downloads the image for the APOD, then saves the image data to a temporary file and creates a desktop notification using the beeep.Notify function from the beeep package, displaing the APODs title and the APOD image.
-func displayNotification(apod NasaAPOD) error {
-	resp, err := http.Get(apod.URL)
+func printAPOD(apod NasaAPOD) {
+	date, err := time.Parse("2006-01-02", apod.Date)
 	if err != nil {
-		return err
+		fmt.Printf("Error parsing date: %v", err)
+		return
 	}
-	defer resp.Body.Close()
-
-	imgData, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	tmpfile, err := os.CreateTemp("", "apod*.jpg")
-	if err != nil {
-		return err
-	}
-	defer os.Remove(tmpfile.Name())
-
-	_, err = tmpfile.Write(imgData)
-	if err != nil {
-		return err
-	}
-
-	return beeep.Notify("Picture of the day", apod.Title, tmpfile.Name())
+	fmt.Printf("%s\n%s\n%s\n\n", apod.Title, date.Format("January 2, 2006"), apod.URL)
 }
