@@ -10,10 +10,9 @@ builds:
       - linux
       - windows
       - darwin
-files:
+archives:
   - files:
       - Keys.json
-    name: Keys.json
 checksum:
   name_template: 'checksums.txt'
 snapshot:
