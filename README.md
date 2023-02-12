@@ -12,6 +12,7 @@ Download the executable from [releases](https://github.com/marcusziade/apod-cli/
 
 ### Homebrew (macOS)
 ```
+brew tap marcusziade/apod-cli
 brew install apod-cli
 ```
 ### Build and run
