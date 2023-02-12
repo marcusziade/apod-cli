@@ -39,7 +39,7 @@ This will fetch APOD data for the last week and display it in the terminal.
 
 ### Specifying a date range:
 ```
-$ apod-cli -start=2022-01-01 -end=2022-01-07
+$ apod-cli -start=2019-04-20 -end=2019-06-09
 ```
 This will fetch APOD data for the specified date range (inclusive) and display it in the terminal.
 
