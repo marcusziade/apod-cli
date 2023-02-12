@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -13,6 +15,8 @@ type NasaAPOD struct {
 	Title string `json:"title"`
 	URL   string `json:"url"`
 }
+
+const apiURL = "https://api.nasa.gov/planetary/apod"
 
 func main() {
 	start, end := parseArgumentsForDateRange()
@@ -44,25 +48,12 @@ func parseArgumentsForDateRange() (start, end string) {
 }
 
 /*
-This function is used to retrieve Astronomy Picture of the Day (APOD) data for a given date range from the NASA API. 
-It takes in two parameters, start and end, which are strings representing the date range to retrieve. 
+This function is used to retrieve Astronomy Picture of the Day (APOD) data for a given date range from the NASA API.
+It takes in two parameters, start and end, which are strings representing the date range to retrieve.
 If either start or end is empty, the function will retrieve the APODs for the last week.
 */
 func getAPODsForDateRange(start, end string) ([]NasaAPOD, error) {
-	var url string
-	if start == "" || end == "" {
-		endDate := time.Now()
-		startDate := endDate.AddDate(0, 0, -7)
-		url = fmt.Sprintf(
-			"https://api.nasa.gov/planetary/apod?api_key=efxF8oNY5ZPU48KF3waxgvnQnmITHxLknZpZz6Q8&start_date=%s&end_date=%s",
-			startDate.Format("2006-01-02"),
-			endDate.Format("2006-01-02"))
-	} else {
-		url = fmt.Sprintf(
-			"https://api.nasa.gov/planetary/apod?api_key=efxF8oNY5ZPU48KF3waxgvnQnmITHxLknZpZz6Q8&start_date=%s&end_date=%s",
-			start,
-			end)
-	}
+	url := constructURL(start, end)
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -86,4 +77,54 @@ func printPrettyFormattedAPOD(apod NasaAPOD) {
 		return
 	}
 	fmt.Printf("%s\n%s\n%s\n\n", apod.Title, date.Format("January 2, 2006"), apod.URL)
+}
+
+func constructURL(start, end string) string {
+	apiKey := getAPIKey()
+
+	if start == "" || end == "" {
+		endDate := time.Now()
+		startDate := endDate.AddDate(0, 0, -7)
+		return fmt.Sprintf(
+			"%s?api_key=%s&start_date=%s&end_date=%s",
+			apiURL, apiKey,
+			startDate.Format("2006-01-02"),
+			endDate.Format("2006-01-02"))
+	}
+	return fmt.Sprintf(
+		"%s?api_key=%s&start_date=%s&end_date=%s",
+		apiURL, apiKey,
+		start, end)
+}
+
+type Config struct {
+	APIKey string
+}
+
+func getAPIKey() string {
+	config, err := readConfig("Keys.json")
+	if err != nil {
+		log.Fatalf("Error reading Keys.json: %v", err)
+	}
+
+	apiKey := config.APIKey
+	return apiKey
+}
+
+// Reads the configuration data from a file.
+func readConfig(fileName string) (*Config, error) {
+	file, err := os.Open(fileName)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	config := &Config{}
+	err = json.NewDecoder(file).Decode(config)
+	if err != nil {
+		fmt.Printf("Error decoding config file: %v\n", err)
+		return nil, err
+	}
+
+	return config, nil
 }
