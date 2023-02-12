@@ -26,13 +26,13 @@ brew install apod-cli
 ## Usage
 ### Basic usage:
 ```
-apod-cli
+$ apod-cli
 ```
 This will fetch APOD data for the last week and display it in the terminal.
 
 ### Specifying a date range:
 ```
-apod-cli -start=2022-01-01 -end=2022-01-07
+$ apod-cli -start=2022-01-01 -end=2022-01-07
 ```
 This will fetch APOD data for the specified date range (inclusive) and display it in the terminal.
 
