@@ -2,9 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestParseArgumentsForDateRange(t *testing.T) {
@@ -59,6 +61,58 @@ func TestReadConfig(t *testing.T) {
 	})
 }
 
+func TestWriteConfig(t *testing.T) {
+	tempFile, err := ioutil.TempFile("", "Keys.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tempFile.Name())
+
+	config := &Config{APIKey: "test-api-key"}
+
+	err = writeConfig(tempFile.Name(), config)
+	if err != nil {
+		t.Errorf("writeConfig() returned error: %v", err)
+	}
+
+	data, err := ioutil.ReadFile(tempFile.Name())
+	if err != nil {
+		t.Errorf("Error reading file: %v", err)
+	}
+
+	var configFromFile Config
+	err = json.Unmarshal(data, &configFromFile)
+	if err != nil {
+		t.Errorf("Error unmarshaling JSON: %v", err)
+	}
+
+	if configFromFile.APIKey != config.APIKey {
+		t.Errorf("API key does not match expected value. Got %s, expected %s", configFromFile.APIKey, config.APIKey)
+	}
+}
+
+func TestWriteConfigFail(t *testing.T) {
+	// Create temporary file and make it read-only
+	tempFile, err := ioutil.TempFile("", "Keys.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tempFile.Name())
+
+	err = tempFile.Chmod(0400)
+	if err != nil {
+		t.Fatalf("Error setting file permissions: %v", err)
+	}
+
+	// Attempt to write config to read-only file
+	config := &Config{APIKey: "test-api-key"}
+	err = writeConfig(tempFile.Name(), config)
+
+	if err == nil {
+		t.Error("Expected error, but got nil")
+	}
+}
+
 func TestPrintPrettyFormattedAPOD(t *testing.T) {
 	apod := NasaAPOD{Date: "2022-02-12", Title: "Test Title", URL: "https://testurl.com"}
 
@@ -86,5 +140,32 @@ func TestPrintPrettyFormattedAPODError(t *testing.T) {
 	err := printPrettyFormattedAPOD(apod)
 	if err == nil {
 		t.Errorf("Expected function to return an error, but it didn't")
+	}
+}
+
+func TestConstructURL(t *testing.T) {
+	apiKey := "test-api-key"
+	start := "2023-02-06"
+	end := "2023-02-13"
+
+	expectedURL := fmt.Sprintf(
+		"%s?api_key=%s&start_date=%s&end_date=%s",
+		apiURL, apiKey, start, end)
+	resultURL := constructURL(apiKey, start, end)
+
+	if resultURL != expectedURL {
+		t.Errorf("URL does not match expected value. Got %s, expected %s", resultURL, expectedURL)
+	}
+
+	// Test case for empty start and end dates
+	expectedURL = fmt.Sprintf(
+		"%s?api_key=%s&start_date=%s&end_date=%s",
+		apiURL, apiKey,
+		time.Now().AddDate(0, 0, -7).Format("2006-01-02"),
+		time.Now().Format("2006-01-02"))
+	resultURL = constructURL(apiKey, "", "")
+
+	if resultURL != expectedURL {
+		t.Errorf("URL does not match expected value. Got %s, expected %s", resultURL, expectedURL)
 	}
 }
