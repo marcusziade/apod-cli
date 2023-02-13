@@ -103,18 +103,20 @@ type Config struct {
 }
 
 func getOrCreateAPIKey() string {
-	config, err := readConfig("Keys.json")
+	filePathName := "Keys.json"
+	config, err := readConfig(filePathName)
 	if err != nil {
 		if os.IsNotExist(err) {
-			fmt.Print("Get your API key at https://api.nasa.gov/#signUp\n\n")
-			fmt.Print("Please enter your unique API key: ")
+			fmt.Println("API key not found in Keys.json")
+			fmt.Println("Please sign up for an API key at https://api.nasa.gov/#signUp")
+			fmt.Println("Once you have your API key, enter it below:")
 			reader := bufio.NewReader(os.Stdin)
 			apiKey, err := reader.ReadString('\n')
 			if err != nil {
 				log.Fatalf("Error reading API key input: %v", err)
 			}
 
-			apiKey = strings.TrimSuffix(apiKey, "\n")
+			apiKey = strings.TrimSpace(apiKey)
 
 			config := &Config{APIKey: apiKey}
 			err = writeConfig("Keys.json", config)
@@ -122,11 +124,11 @@ func getOrCreateAPIKey() string {
 				log.Fatalf("Error saving API key to file: %v", err)
 			}
 
-			fmt.Println("API key saved to file.")
+			fmt.Printf("API key saved to %s.\n", filePathName)
 			return apiKey
-		} else {
-			log.Fatalf("Error reading Keys.json: %v", err)
 		}
+
+		log.Fatalf("Error reading Keys.json: %v", err)
 	}
 
 	apiKey := config.APIKey
