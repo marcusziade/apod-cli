@@ -10,11 +10,6 @@ builds:
       - linux
       - windows
       - darwin
-source:
-  rlcp: true
-  enabled: true
-  files:
-    - 'Keys.json'
 checksum:
   name_template: 'checksums.txt'
 snapshot:
