@@ -70,13 +70,13 @@ func getAPODsForDateRange(start, end string) ([]NasaAPOD, error) {
 	return apods, nil
 }
 
-func printPrettyFormattedAPOD(apod NasaAPOD) {
+func printPrettyFormattedAPOD(apod NasaAPOD) error {
 	date, err := time.Parse("2006-01-02", apod.Date)
 	if err != nil {
-		fmt.Printf("Error parsing date: %v", err)
-		return
+		return fmt.Errorf("error parsing date: %v", err)
 	}
 	fmt.Printf("%s\n%s\n%s\n\n", apod.Title, date.Format("January 2, 2006"), apod.URL)
+	return nil
 }
 
 func constructURL(start, end string) string {
