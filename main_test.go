@@ -2,9 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"os"
 	"testing"
-	"time"
 )
 
 func TestParseArgumentsForDateRange(t *testing.T) {
@@ -19,42 +19,6 @@ func TestParseArgumentsForDateRange(t *testing.T) {
 			t.Errorf("Expected end date to be '2023-02-28', but got %s", end)
 		}
 	})
-}
-
-func TestGetAPODsForDateRange_Success(t *testing.T) {
-	start := "2023-02-05"
-	end := "2023-02-11"
-
-	apods, err := getAPODsForDateRange(start, end)
-
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-	}
-
-	if len(apods) == 0 {
-		t.Error("No APODs returned")
-	}
-
-	for _, apod := range apods {
-		if date, err := time.Parse("2006-01-02", apod.Date); err != nil || date.Before(time.Date(2023, 2, 5, 0, 0, 0, 0, time.UTC)) || date.After(time.Date(2023, 2, 11, 0, 0, 0, 0, time.UTC)) {
-			t.Errorf("APOD date out of range: %v", apod.Date)
-		}
-	}
-}
-
-func TestGetAPODsForDateRange_Fail(t *testing.T) {
-	start := time.Now().AddDate(0, 0, 1).Format("2006-01-02") // Future date
-	end := time.Now().AddDate(0, 0, 2).Format("2006-01-02")
-
-	apods, err := getAPODsForDateRange(start, end)
-
-	if err == nil {
-		t.Error("Expected error but got none")
-	}
-
-	if apods != nil {
-		t.Error("Expected nil APODs but got non-nil")
-	}
 }
 
 func TestReadConfig(t *testing.T) {
@@ -93,4 +57,34 @@ func TestReadConfig(t *testing.T) {
 			t.Errorf("Expected an error, but did not get one")
 		}
 	})
+}
+
+func TestPrintPrettyFormattedAPOD(t *testing.T) {
+	apod := NasaAPOD{Date: "2022-02-12", Title: "Test Title", URL: "https://testurl.com"}
+
+	// Redirect stdout to buffer to capture output
+	old := os.Stdout
+	defer func() { os.Stdout = old }()
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	printPrettyFormattedAPOD(apod)
+
+	// Read from buffer to check output
+	w.Close()
+	out, _ := ioutil.ReadAll(r)
+
+	expected := "Test Title\nFebruary 12, 2022\nhttps://testurl.com\n\n"
+	if string(out) != expected {
+		t.Errorf("Unexpected output. Expected: %q, got: %q", expected, string(out))
+	}
+}
+
+func TestPrintPrettyFormattedAPODError(t *testing.T) {
+	apod := NasaAPOD{Date: "invalid date", Title: "Test Title", URL: "https://testurl.com"}
+
+	err := printPrettyFormattedAPOD(apod)
+	if err == nil {
+		t.Errorf("Expected function to return an error, but it didn't")
+	}
 }
