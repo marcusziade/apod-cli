@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -19,12 +21,13 @@ type NasaAPOD struct {
 const apiURL = "https://api.nasa.gov/planetary/apod"
 
 func main() {
+	apiKey := getOrCreateAPIKey()
 	start, end := parseArgumentsForDateRange()
 
 	loadMsg := "Fetching APODs...\n\n"
 	fmt.Println(loadMsg)
 
-	apods, err := getAPODsForDateRange(start, end)
+	apods, err := getAPODsForDateRange(apiKey, start, end)
 	if err != nil {
 		fmt.Println("Error retrieving data:", err)
 		return
@@ -49,11 +52,11 @@ func parseArgumentsForDateRange() (start, end string) {
 
 /*
 This function is used to retrieve Astronomy Picture of the Day (APOD) data for a given date range from the NASA API.
-It takes in two parameters, start and end, which are strings representing the date range to retrieve.
+It takes in three parameters: apiKey, start, and end, which represent the API key and the date range to retrieve.
 If either start or end is empty, the function will retrieve the APODs for the last week.
 */
-func getAPODsForDateRange(start, end string) ([]NasaAPOD, error) {
-	url := constructURL(start, end)
+func getAPODsForDateRange(apiKey, start, end string) ([]NasaAPOD, error) {
+	url := constructURL(apiKey, start, end)
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -79,9 +82,7 @@ func printPrettyFormattedAPOD(apod NasaAPOD) error {
 	return nil
 }
 
-func constructURL(start, end string) string {
-	apiKey := getAPIKey()
-
+func constructURL(apiKey, start, end string) string {
 	if start == "" || end == "" {
 		endDate := time.Now()
 		startDate := endDate.AddDate(0, 0, -7)
@@ -101,10 +102,31 @@ type Config struct {
 	APIKey string
 }
 
-func getAPIKey() string {
+func getOrCreateAPIKey() string {
 	config, err := readConfig("Keys.json")
 	if err != nil {
-		log.Fatalf("Error reading Keys.json: %v", err)
+		if os.IsNotExist(err) {
+			fmt.Print("Get your API key at https://api.nasa.gov/#signUp\n\n")
+			fmt.Print("Please enter your unique API key: ")
+			reader := bufio.NewReader(os.Stdin)
+			apiKey, err := reader.ReadString('\n')
+			if err != nil {
+				log.Fatalf("Error reading API key input: %v", err)
+			}
+
+			apiKey = strings.TrimSuffix(apiKey, "\n")
+
+			config := &Config{APIKey: apiKey}
+			err = writeConfig("Keys.json", config)
+			if err != nil {
+				log.Fatalf("Error saving API key to file: %v", err)
+			}
+
+			fmt.Println("API key saved to file.")
+			return apiKey
+		} else {
+			log.Fatalf("Error reading Keys.json: %v", err)
+		}
 	}
 
 	apiKey := config.APIKey
@@ -127,4 +149,20 @@ func readConfig(fileName string) (*Config, error) {
 	}
 
 	return config, nil
+}
+
+// Saves the configuration data to a file.
+func writeConfig(fileName string, config *Config) error {
+	file, err := os.Create(fileName)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	err = json.NewEncoder(file).Encode(config)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
