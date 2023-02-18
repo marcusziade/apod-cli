@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"testing"
 	"time"
@@ -35,7 +35,7 @@ func TestPrintPrettyFormattedAPOD(t *testing.T) {
 
 	// Read from buffer to check output
 	w.Close()
-	out, _ := ioutil.ReadAll(r)
+	out, _ := io.ReadAll(r)
 
 	expected := "Test Title\nFebruary 12, 2022\nhttps://testurl.com\n\n"
 	if string(out) != expected {
