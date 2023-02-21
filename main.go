@@ -11,7 +11,7 @@ import (
 type NasaAPOD struct {
 	Date  string `json:"date"`
 	Title string `json:"title"`
-	URL   string `json:"url"`
+	URL   string `json:"hdurl"`
 }
 
 const apiURL = "https://api.nasa.gov/planetary/apod"
