@@ -5,7 +5,7 @@ builds:
   - env:
       - CGO_ENABLED=0
     # Entrypoint to the application
-    main: ./main.go
+    main: .
     goos:
       - linux
       - windows
