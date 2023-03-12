@@ -13,7 +13,7 @@ type Config struct {
 	APIKey string
 }
 
-func GetOrCreateAPIKey() string {
+func getOrCreateAPIKey() string {
 	filePathName := "Keys.json"
 	config, err := readConfig(filePathName)
 	if err != nil {

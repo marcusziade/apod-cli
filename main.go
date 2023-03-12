@@ -17,7 +17,7 @@ type NasaAPOD struct {
 const apiURL = "https://api.nasa.gov/planetary/apod"
 
 func main() {
-	apiKey := GetOrCreateAPIKey()
+	apiKey := getOrCreateAPIKey()
 	start, end := parseArgumentsForDateRange()
 
 	loadMsg := "Fetching APODs...\n\n"
