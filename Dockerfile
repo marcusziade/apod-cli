@@ -1,32 +1,27 @@
-# Use the official Go image
-FROM golang:1.19 AS build
+# Use the official Golang image to create a build artifact.
+FROM golang:1.19 as builder
 
 # Set the working directory
 WORKDIR /app
 
-# Copy go mod and sum files
-COPY go.mod go.sum ./
+# Copy the Go Modules manifests
+COPY go.mod go.mod
+COPY go.sum go.sum
 
 # Download dependencies
 RUN go mod download
 
-# Copy source code
+# Copy the source code
 COPY . .
 
-# Build the application
-RUN go build -o main .
+# Build
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o /app/main .
 
-# Use a lightweight image for deployment
-FROM alpine:latest AS runtime
+# Use a minimal image for deployment
+FROM alpine:latest
 
-# Install necessary libraries
-RUN apk --no-cache add ca-certificates
+# Copy the binary
+COPY --from=builder /app/main /app/main
 
-# Copy binary
-COPY --from=build /app/main /app/
-
-# Set the working directory
-WORKDIR /app
-
-# Run the application
-CMD [". --download-only"]
+# This is the entry point, specify your flags here
+ENTRYPOINT [ "/app/main", "--download-only" ]

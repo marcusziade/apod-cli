@@ -14,6 +14,11 @@ type Config struct {
 }
 
 func getOrCreateAPIKey() string {
+	apiKey := os.Getenv("NASA_API_KEY")
+	if apiKey != "" {
+		return apiKey
+	}
+
 	filePathName := "Keys.json"
 	config, err := readConfig(filePathName)
 	if err != nil {
@@ -42,7 +47,7 @@ func getOrCreateAPIKey() string {
 		log.Fatalf("Error reading Keys.json: %v", err)
 	}
 
-	apiKey := config.APIKey
+	apiKey = config.APIKey
 	return apiKey
 }
 

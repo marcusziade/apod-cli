@@ -22,7 +22,10 @@ type NasaAPOD struct {
 const apiURL = "https://api.nasa.gov/planetary/apod"
 
 func main() {
-	apiKey := getOrCreateAPIKey()
+	apiKey := os.Getenv("NASA_API_KEY")
+	if apiKey == "" {
+		apiKey = getOrCreateAPIKey()
+	}
 
 	start, end, downloadOnly := parseArgumentsForDateRange()
 
