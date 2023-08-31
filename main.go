@@ -5,6 +5,8 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"os/exec"
+	"runtime"
 	"time"
 )
 
@@ -36,6 +38,7 @@ func main() {
 
 	for _, apod := range apods {
 		printPrettyFormattedAPOD(apod)
+		openBrowser(apod.URL)
 	}
 }
 
@@ -92,4 +95,23 @@ func constructURL(apiKey, start, end string) string {
 		"%s?api_key=%s&start_date=%s&end_date=%s",
 		apiURL, apiKey,
 		start, end)
+}
+
+func openBrowser(url string) {
+	var err error
+
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", url).Start()
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		err = exec.Command("open", url).Start()
+	default:
+		err = fmt.Errorf("unsupported platform")
+	}
+
+	if err != nil {
+		fmt.Println("Error opening browser", url, ":", err)
+	}
 }
