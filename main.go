@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"net/http"
-	"os/exec"
-	"runtime"
+	"os"
+	"strings"
 	"time"
 )
 
@@ -19,11 +20,14 @@ type NasaAPOD struct {
 const apiURL = "https://api.nasa.gov/planetary/apod"
 
 func main() {
+	if _, err := os.Stat("./images"); os.IsNotExist(err) {
+		os.Mkdir("./images", 0755)
+	}
+
 	apiKey := getOrCreateAPIKey()
 	start, end := parseArgumentsForDateRange()
 
-	loadMsg := "Fetching APODs...\n\n"
-	fmt.Println(loadMsg)
+	fmt.Println("Fetching APODs...")
 
 	apods, err := getAPODsForDateRange(apiKey, start, end)
 	if err != nil {
@@ -38,7 +42,7 @@ func main() {
 
 	for _, apod := range apods {
 		printPrettyFormattedAPOD(apod)
-		openBrowser(apod.URL)
+		downloadImage(apod.URL, sanitizeFilename(apod.Title))
 	}
 }
 
@@ -72,13 +76,13 @@ func getAPODsForDateRange(apiKey, start, end string) ([]NasaAPOD, error) {
 	return apods, nil
 }
 
-func printPrettyFormattedAPOD(apod NasaAPOD) error {
+func printPrettyFormattedAPOD(apod NasaAPOD) {
 	date, err := time.Parse("2006-01-02", apod.Date)
 	if err != nil {
-		return fmt.Errorf("error parsing date: %v", err)
+		fmt.Println("Error parsing date:", err)
+		return
 	}
 	fmt.Printf("%s\n%s\n%s\n\n", apod.Title, date.Format("January 2, 2006"), apod.URL)
-	return nil
 }
 
 func constructURL(apiKey, start, end string) string {
@@ -97,21 +101,32 @@ func constructURL(apiKey, start, end string) string {
 		start, end)
 }
 
-func openBrowser(url string) {
-	var err error
-
-	switch runtime.GOOS {
-	case "linux":
-		err = exec.Command("xdg-open", url).Start()
-	case "windows":
-		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
-	case "darwin":
-		err = exec.Command("open", url).Start()
-	default:
-		err = fmt.Errorf("unsupported platform")
-	}
-
+func downloadImage(url, filename string) {
+	resp, err := http.Get(url)
 	if err != nil {
-		fmt.Println("Error opening browser", url, ":", err)
+		fmt.Println("Error downloading image:", err)
+		return
 	}
+	defer resp.Body.Close()
+
+	file, err := os.Create("./images/" + sanitizeFilename(filename) + ".jpg")
+	if err != nil {
+		fmt.Println("Error creating file:", err)
+		return
+	}
+	defer file.Close()
+
+	_, err = io.Copy(file, resp.Body)
+	if err != nil {
+		fmt.Println("Error saving image:", err)
+	}
+}
+
+func sanitizeFilename(filename string) string {
+	return strings.Map(func(r rune) rune {
+		if r == ' ' || r == '_' || r == '-' || (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
+			return r
+		}
+		return -1
+	}, filename)
 }

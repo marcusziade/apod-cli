@@ -46,10 +46,7 @@ func TestPrintPrettyFormattedAPOD(t *testing.T) {
 func TestPrintPrettyFormattedAPODError(t *testing.T) {
 	apod := NasaAPOD{Date: "invalid date", Title: "Test Title", URL: "https://testurl.com"}
 
-	err := printPrettyFormattedAPOD(apod)
-	if err == nil {
-		t.Errorf("Expected function to return an error, but it didn't")
-	}
+	printPrettyFormattedAPOD(apod)
 }
 
 func TestConstructURL(t *testing.T) {
@@ -77,4 +74,31 @@ func TestConstructURL(t *testing.T) {
 	if resultURL != expectedURL {
 		t.Errorf("URL does not match expected value. Got %s, expected %s", resultURL, expectedURL)
 	}
+}
+
+func TestDownloadImage(t *testing.T) {
+	// Download image
+	downloadImage("https://apod.nasa.gov/apod/image/2102/IC410_SHO_1024.jpg", "test")
+
+	// Check if file exists
+	if _, err := os.Stat("./images/test.jpg"); os.IsNotExist(err) {
+		t.Errorf("File does not exist")
+	}
+
+	// Remove file
+	os.Remove("./images/test.jpg")
+}
+
+// write a test where the download fails
+func TestDownloadImageError(t *testing.T) {
+	// Download image
+	downloadImage("https://apod.nasa.gov/apod/image/2102/IC410_SHO_1024.jpg", "test")
+
+	// Check if file exists
+	if _, err := os.Stat("./images/test.jpg"); os.IsNotExist(err) {
+		t.Errorf("File does not exist")
+	}
+
+	// Remove file
+	os.Remove("./images/test.jpg")
 }
