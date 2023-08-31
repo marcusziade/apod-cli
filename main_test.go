@@ -12,7 +12,7 @@ func TestParseArgumentsForDateRange(t *testing.T) {
 	t.Run("Start and end flags provided", func(t *testing.T) {
 		// Both start and end flags provided, so the function should return the start and end dates
 		os.Args = []string{"cmd", "-start", "2023-02-01", "-end", "2023-02-28"}
-		start, end := parseArgumentsForDateRange()
+		start, end, _ := parseArgumentsForDateRange()
 		if start != "2023-02-01" {
 			t.Errorf("Expected start date to be '2023-02-01', but got %s", start)
 		}
@@ -76,29 +76,30 @@ func TestConstructURL(t *testing.T) {
 	}
 }
 
-func TestDownloadImage(t *testing.T) {
-	// Download image
-	downloadImage("https://apod.nasa.gov/apod/image/2102/IC410_SHO_1024.jpg", "test")
+func TestDownloadImageSuccess(t *testing.T) {
+	testURL := "https://apod.nasa.gov/apod/image/2102/IC410_SHO_1024.jpg"
+	testFilename := "success_test"
 
-	// Check if file exists
-	if _, err := os.Stat("./images/test.jpg"); os.IsNotExist(err) {
-		t.Errorf("File does not exist")
+	downloadImage(testURL, testFilename)
+
+	if _, err := os.Stat("./images/" + testFilename + ".jpg"); os.IsNotExist(err) {
+		t.Errorf("File does not exist, download failed")
 	}
 
-	// Remove file
-	os.Remove("./images/test.jpg")
+	// Cleanup
+	os.Remove("./images/" + testFilename + ".jpg")
 }
 
-// write a test where the download fails
-func TestDownloadImageError(t *testing.T) {
-	// Download image
-	downloadImage("https://apod.nasa.gov/apod/image/2102/IC410_SHO_1024.jpg", "test")
+func TestDownloadImageFail(t *testing.T) {
+	testURL := "https://nonexistenturl.com/invalid.jpg"
+	testFilename := "fail_test"
 
-	// Check if file exists
-	if _, err := os.Stat("./images/test.jpg"); os.IsNotExist(err) {
-		t.Errorf("File does not exist")
+	downloadImage(testURL, testFilename)
+
+	if _, err := os.Stat("./images/" + testFilename + ".jpg"); !os.IsNotExist(err) {
+		t.Errorf("File exists but should not")
 	}
 
-	// Remove file
-	os.Remove("./images/test.jpg")
+	// Cleanup in case the file was created
+	os.Remove("./images/" + testFilename + ".jpg")
 }

@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -20,12 +22,9 @@ type NasaAPOD struct {
 const apiURL = "https://api.nasa.gov/planetary/apod"
 
 func main() {
-	if _, err := os.Stat("./images"); os.IsNotExist(err) {
-		os.Mkdir("./images", 0755)
-	}
-
 	apiKey := getOrCreateAPIKey()
-	start, end := parseArgumentsForDateRange()
+
+	start, end, downloadOnly := parseArgumentsForDateRange()
 
 	fmt.Println("Fetching APODs...")
 
@@ -42,13 +41,18 @@ func main() {
 
 	for _, apod := range apods {
 		printPrettyFormattedAPOD(apod)
-		downloadImage(apod.URL, sanitizeFilename(apod.Title))
+		if downloadOnly {
+			downloadImage(apod.URL, sanitizeFilename(apod.Title))
+		} else {
+			openBrowser(apod.URL)
+		}
 	}
 }
 
-func parseArgumentsForDateRange() (start, end string) {
+func parseArgumentsForDateRange() (start, end string, downloadOnly bool) {
 	flag.StringVar(&start, "start", "", "start date (YYYY-MM-DD)")
 	flag.StringVar(&end, "end", "", "end date (YYYY-MM-DD)")
+	flag.BoolVar(&downloadOnly, "download-only", false, "Only download images without opening in browser")
 	flag.Parse()
 	return
 }
@@ -102,6 +106,12 @@ func constructURL(apiKey, start, end string) string {
 }
 
 func downloadImage(url, filename string) {
+	dir := "./images/"
+	// Make sure the directory exists
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		os.Mkdir(dir, 0755)
+	}
+
 	resp, err := http.Get(url)
 	if err != nil {
 		fmt.Println("Error downloading image:", err)
@@ -109,7 +119,7 @@ func downloadImage(url, filename string) {
 	}
 	defer resp.Body.Close()
 
-	file, err := os.Create("./images/" + sanitizeFilename(filename) + ".jpg")
+	file, err := os.Create(dir + sanitizeFilename(filename) + ".jpg")
 	if err != nil {
 		fmt.Println("Error creating file:", err)
 		return
@@ -129,4 +139,23 @@ func sanitizeFilename(filename string) string {
 		}
 		return -1
 	}, filename)
+}
+
+func openBrowser(url string) {
+	var err error
+
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", url).Start()
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		err = exec.Command("open", url).Start()
+	default:
+		err = fmt.Errorf("unsupported platform")
+	}
+
+	if err != nil {
+		fmt.Println("Error opening browser", url, ":", err)
+	}
 }
