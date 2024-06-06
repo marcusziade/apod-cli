@@ -1,5 +1,7 @@
 # APOD CLI
 
+[![Github All Releases](https://img.shields.io/github/downloads/marcusziade/apod-cli/total.svg)](https://github.com/marcusziade/apod-cli/releases)
+
 ![apod-cli-banner](https://user-images.githubusercontent.com/47460844/218305479-4f015d26-9cbe-40f6-ab4f-77a71416b385.png)
 #### The APOD CLI is a command-line interface that allows you to fetch and view Astronomy Picture of the Day (APOD) data from NASA's API.
 
